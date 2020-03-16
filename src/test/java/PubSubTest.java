@@ -2,8 +2,8 @@ import example.Message;
 import org.awaitility.Awaitility;
 import org.junit.*;
 import topics.Discoverer;
-import topics.ReaderTopic;
-import topics.WriterTopic;
+import topics.Subscriber;
+import topics.Publisher;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -20,19 +20,19 @@ public class PubSubTest {
     public Consumer<Message> noopConsumer = msg -> {};
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp(){
         api = MockedClasses.getMockedPubSub(); //TODO: Your implementation goes here
     }
 
     @After
-    public void after() throws Exception {
+    public void after(){
         api.closeAll();
     }
 
     @Test
     public void testWriterCreation() {
-        WriterTopic<Message> writer1 = api.getOrCreateWriter("1", "CORONA");
-        WriterTopic<Message> writer2 = api.getOrCreateWriter("2", "CORONA");
+        Publisher<Message> writer1 = api.getOrCreateWriter("1", "CORONA");
+        Publisher<Message> writer2 = api.getOrCreateWriter("2", "CORONA");
         assertThat(writer1).isNotNull();
         assertThat(writer2).isNotNull();
         assertThat(writer1).isSameAs(api.getOrCreateWriter("1", "CORONA"));
@@ -42,8 +42,8 @@ public class PubSubTest {
 
     @Test
     public void testReaderCreation() {
-        ReaderTopic<Message> reader1 = api.getOrCreateReader("1", "CORONA", noopConsumer);
-        ReaderTopic<Message> reader2 = api.getOrCreateReader("2", "CORONA", noopConsumer);
+        Subscriber<Message> reader1 = api.getOrCreateReader("1", "CORONA", noopConsumer);
+        Subscriber<Message> reader2 = api.getOrCreateReader("2", "CORONA", noopConsumer);
         assertThat(reader1).isNotNull();
         assertThat(reader2).isNotNull();
         assertThat(reader1).isSameAs(api.getOrCreateReader("1", "CORONA", noopConsumer));
@@ -56,8 +56,8 @@ public class PubSubTest {
         AtomicInteger received = new AtomicInteger(0);
         AtomicBoolean allEqual = new AtomicBoolean(true);
         Message toSend = new Message("unique af");
-        WriterTopic<Message> writer = api.getOrCreateWriter("writer", "CORONA");
-        ReaderTopic<Message> reader = api.getOrCreateReader("reader", "CORONA", msg -> {
+        Publisher<Message> writer = api.getOrCreateWriter("writer", "CORONA");
+        Subscriber<Message> reader = api.getOrCreateReader("reader", "CORONA", msg -> {
             received.incrementAndGet();
             allEqual.compareAndSet(true, toSend.equals(msg));
         });
@@ -73,9 +73,9 @@ public class PubSubTest {
     public void testDiscovery() {
         AtomicInteger discovered = new AtomicInteger(0);
         Discoverer discoverer = api.openDiscoverer("discoverer", topicData -> discovered.incrementAndGet());
-        WriterTopic<Message> writer = api.getOrCreateWriter("writer", "CORONA");
-        ReaderTopic<Message> reader1 = api.getOrCreateReader("reader1", "CORONA", noopConsumer);
-        ReaderTopic<Message> reader2 = api.getOrCreateReader("reader2", "CORONA", noopConsumer);
+        Publisher<Message> writer = api.getOrCreateWriter("writer", "CORONA");
+        Subscriber<Message> reader1 = api.getOrCreateReader("reader1", "CORONA", noopConsumer);
+        Subscriber<Message> reader2 = api.getOrCreateReader("reader2", "CORONA", noopConsumer);
         Awaitility.await().atMost(1, TimeUnit.SECONDS).untilAsserted(() -> assertThat(discovered).hasValue(3));
         assertThat(discoverer.getDiscoveredTopics())
                 .containsExactlyInAnyOrder(writer.getTopicData(), reader1.getTopicData(), reader2.getTopicData());
