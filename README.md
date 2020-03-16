@@ -1,29 +1,11 @@
-# README #
+# PubSub excercise #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+This is an excercise in which you will implement a simple PubSub interface using RTI NDDS.
 
-### What is this repository for? ###
+The code defines a couple of interfaces and some tests using these interfaces.
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+Your mission is to make these tests pass without changing them (unless I made a mistake in making those tests).
 
-### How do I get set up? ###
+You should probably start with reading the tests before you write any code.
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+You are encouraged to add tests of your own.
