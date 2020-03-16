@@ -1,9 +1,10 @@
 package example;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Message {
+public class Message implements Serializable {
     private String id;
 
     public Message(@Nonnull String id) {
