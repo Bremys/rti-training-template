@@ -1,10 +1,10 @@
-package topics;
+package iface.topics;
 
-import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public interface Discoverer extends AutoCloseable{
-    List<TopicData> getDiscoveredTopics();
+    Set<TopicData> getDiscoveredTopics();
     String getId();
     void changeHandler(Consumer<TopicData> newHandler);
 }
