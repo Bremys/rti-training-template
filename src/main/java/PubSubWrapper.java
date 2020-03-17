@@ -16,8 +16,7 @@ public interface PubSubWrapper extends AutoCloseable {
     boolean closeDiscoverer(String id);
     boolean closeTopic(String id);
 
-    boolean closeAll();
-
-    ImmutableMap<String, Topic> getRunningTopics();
+    ImmutableMap<String, Publisher> getPublishers();
+    ImmutableMap<String, Subscriber> getSubscribers();
     ImmutableMap<String, Discoverer> getRunningDiscoverers();
 }
