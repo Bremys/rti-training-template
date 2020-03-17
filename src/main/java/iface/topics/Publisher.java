@@ -1,4 +1,4 @@
-package topics;
+package iface.topics;
 
 import java.io.Serializable;
 

@@ -1,23 +1,27 @@
+package iface;
+
 import com.google.common.collect.ImmutableMap;
-import topics.*;
+import iface.topics.Discoverer;
+import iface.topics.Publisher;
+import iface.topics.Subscriber;
+import iface.topics.TopicData;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Collection;
 import java.util.function.Consumer;
 
 public interface PubSubWrapper extends AutoCloseable {
     <T extends Serializable> Publisher<T> getOrCreateWriter(String id, String topicName);
     <T extends Serializable> Subscriber<T> getOrCreateReader(String id, String topicName, Consumer<T> eventHandler);
-    Discoverer openDiscoverer(String id, List<String> allowedTopics, List<String> deniedTopics, Consumer<TopicData> eventHandler);
+    Discoverer openDiscoverer(String id, Collection<String> allowedTopics, Collection<String> deniedTopics, Consumer<TopicData> eventHandler);
     default Discoverer openDiscoverer(String id, Consumer<TopicData> eventHandler) {
         return openDiscoverer(id, null, null, eventHandler);
     }
 
-    boolean closeDiscoverer(String id);
-    boolean closeTopic(String id);
+    void closeDiscoverer(String id);
+    void closeTopic(String id);
 
-    boolean closeAll();
-
-    ImmutableMap<String, Topic> getRunningTopics();
+    ImmutableMap<String, Publisher<?>> getPublishers();
+    ImmutableMap<String, Subscriber<?>> getSubscribers();
     ImmutableMap<String, Discoverer> getRunningDiscoverers();
 }

@@ -1,14 +1,16 @@
 import example.Message;
 import static org.mockito.Mockito.*;
-import topics.Discoverer;
-import topics.Subscriber;
-import topics.Publisher;
+import iface.PubSubWrapper;
+import iface.topics.Discoverer;
+import iface.topics.Subscriber;
+import iface.topics.Publisher;
+import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.function.Consumer;
 
 public class MockedClasses {
-    public static PubSubWrapper getMockedPubSub(){
+    public static PubSubWrapper getMockedPubSub() throws Exception {
         PubSubWrapper mocked = mock(PubSubWrapper.class);
         Subscriber<Message> reader = getMockedSubscriber();
         Publisher<Message> writer = getMockedPublisher();
@@ -16,7 +18,7 @@ public class MockedClasses {
         when(mocked.<Message>getOrCreateReader(anyString(), anyString(), any(Consumer.class))).thenReturn(reader);
         when(mocked.<Message>getOrCreateWriter(anyString(), anyString())).thenReturn(writer);
         when(mocked.openDiscoverer(anyString(), any(Consumer.class))).thenReturn(discoverer);
-        when(mocked.closeAll()).thenReturn(false);
+        Mockito.doNothing().when(mocked).close();
         return mocked;
     }
 
@@ -28,14 +30,14 @@ public class MockedClasses {
 
     private static Publisher<Message> getMockedPublisher(){
         Publisher<Message> mocked = mock(Publisher.class);
-        when(mocked.send(any(Message.class))).thenReturn(false);
+        Mockito.doNothing().when(mocked).send(any(Message.class));
         when(mocked.getTopicData()).thenReturn(null);
         return mocked;
     }
 
     private static Discoverer getMockedDiscoverer(){
         Discoverer mocked = mock(Discoverer.class);
-        when(mocked.getDiscoveredTopics()).thenReturn(Collections.emptyList());
+        when(mocked.getDiscoveredTopics()).thenReturn(Collections.emptySet());
         return mocked;
     }
 }
