@@ -1,8 +1,8 @@
 import com.google.common.collect.Lists;
 import example.Message;
 import iface.PubSubWrapper;
+import iface.PubSubWrapperImpl;
 import iface.topics.*;
-import impl.RtiPubSub;
 import org.awaitility.Awaitility;
 import org.junit.*;
 
@@ -19,15 +19,15 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.*;
 
 
-
 public class PubSubTest {
 
     public static PubSubWrapper api;
-    public Consumer<Message> noopConsumer = msg -> {};
+    public Consumer<Message> noopConsumer = msg -> {
+    };
 
     @Before
     public void setUp() throws Exception {
-        api = MockedClasses.getMockedPubSub(); //TODO: Your implementation goes here
+        api = new PubSubWrapperImpl();
     }
 
     @After
@@ -90,13 +90,13 @@ public class PubSubTest {
     @Test
     public void multipleWritersSingleReader() {
         List<Message> messagesToSend = Arrays.stream("cool stuff bruh !".split(" "))
-                                        .map(Message::new)
-                                        .collect(Collectors.toList());
+                .map(Message::new)
+                .collect(Collectors.toList());
         List<Message> received = new CopyOnWriteArrayList<>(); // Thread-safe list
         List<Publisher<Message>> publishers = Lists.newArrayList(api.getOrCreateWriter("writer1", "CORONA"), api.getOrCreateWriter("writer2", "CORONA"));
         api.<Message>getOrCreateReader("reader", "CORONA", received::add);
 
-        for (int i = 0; i < messagesToSend.size(); i++){ // Why can't I access index on streams, java please
+        for (int i = 0; i < messagesToSend.size(); i++) { // Why can't I access index on streams, java please
             publishers.get(i % publishers.size()).send(messagesToSend.get(i));
         }
 
@@ -107,9 +107,12 @@ public class PubSubTest {
     public void allowedTopicsDiscovery() {
         Topic corona1 = api.getOrCreateWriter("corona1", "CORONA1");
         Topic corona2 = api.getOrCreateWriter("corona2", "CORONA2");
-        Discoverer discoverer1 = api.openDiscoverer("discoverer1", Collections.singleton("CORONA1"), null, topic -> {});
-        Discoverer discoverer2 = api.openDiscoverer("discoverer2", Collections.singleton("CORONA2"), null, topic -> {});
-        Discoverer discoverer3 = api.openDiscoverer("discoverer3", topic -> {});
+        Discoverer discoverer1 = api.openDiscoverer("discoverer1", Collections.singleton("CORONA1"), null, topic -> {
+        });
+        Discoverer discoverer2 = api.openDiscoverer("discoverer2", Collections.singleton("CORONA2"), null, topic -> {
+        });
+        Discoverer discoverer3 = api.openDiscoverer("discoverer3", topic -> {
+        });
 
         Awaitility.await()
                 .untilAsserted(
@@ -131,8 +134,10 @@ public class PubSubTest {
         Topic corona2 = api.getOrCreateWriter("corona2", "CORONA2");
         Topic corona3 = api.getOrCreateReader("corona3", "CORONA3", noopConsumer);
 
-        Discoverer discoverer1 = api.openDiscoverer("discoverer1",  null, Collections.singleton("CORONA1"), topic -> {});
-        Discoverer discoverer2 = api.openDiscoverer("discoverer2",  null, Collections.singleton("CORONA2"), topic -> {});
+        Discoverer discoverer1 = api.openDiscoverer("discoverer1", null, Collections.singleton("CORONA1"), topic -> {
+        });
+        Discoverer discoverer2 = api.openDiscoverer("discoverer2", null, Collections.singleton("CORONA2"), topic -> {
+        });
 
         Awaitility.await()
                 .untilAsserted(
@@ -148,7 +153,8 @@ public class PubSubTest {
     public void testAllowedDeniedDiscovery() {
         Topic corona1 = api.getOrCreateWriter("corona1", "CORONA1");
         Topic corona2 = api.getOrCreateWriter("corona2", "CORONA2");
-        Discoverer discoverer = api.openDiscoverer("discoverer", Collections.singleton("CORONA1"), Collections.singleton("CORONA2"), topic -> {});
+        Discoverer discoverer = api.openDiscoverer("discoverer", Collections.singleton("CORONA1"), Collections.singleton("CORONA2"), topic -> {
+        });
 
         Awaitility.await()
                 .untilAsserted(
