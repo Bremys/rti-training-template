@@ -20,11 +20,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+@SuppressWarnings("unchecked")
 public class PubSubWrapperImpl implements PubSubWrapper {
 
     private DomainParticipant participant;
-    private Map<String, Publisher<? extends Serializable>> publishers;
-    private Map<String, Subscriber<? extends Serializable>> subscribers;
+    private Map<String, PublisherImpl<? extends Serializable>> publishers;
+    private Map<String, SubscriberImpl<? extends Serializable>> subscribers;
 
     public PubSubWrapperImpl() {
         participant = DomainParticipantFactory.get_instance().create_participant(
@@ -43,14 +44,10 @@ public class PubSubWrapperImpl implements PubSubWrapper {
 
     @Override
     public <T extends Serializable> Publisher<T> getOrCreateWriter(String id, String topicName) {
-        if (publishers.containsKey(id)) {
-            return (Publisher<T>) publishers.get(id);
-        } else {
+        return (Publisher<T>) publishers.computeIfAbsent(id, key -> {
             TopicData data = new TopicDataImpl(topicName, id, ETopicMode.WRITE);
-            Publisher<T> publisher = new PublisherImpl<>(participant, data, createTopic(topicName));
-            publishers.put(id, publisher);
-            return publisher;
-        }
+            return new PublisherImpl<T>(participant, data, getOrCreateTopic(topicName));
+        });
     }
 
     /**
@@ -58,7 +55,7 @@ public class PubSubWrapperImpl implements PubSubWrapper {
      *
      * @return rti topic instance
      */
-    private Topic createTopic(String topicName) {
+    private Topic getOrCreateTopic(String topicName) {
         String typeName = Utils.getTypeName(topicName);
         Topic topic = participant.find_topic(topicName, Duration_t.DURATION_AUTO);
         if (topic == null) {
@@ -72,17 +69,15 @@ public class PubSubWrapperImpl implements PubSubWrapper {
         return topic;
     }
 
+
     @Override
     public <T extends Serializable> Subscriber<T> getOrCreateReader(String id, String topicName, Consumer<T> eventHandler) {
-        if (subscribers.containsKey(id)) {
-            return (Subscriber<T>) subscribers.get(id);
-        } else {
+        SubscriberImpl<T> subscriber = (SubscriberImpl<T>) subscribers.computeIfAbsent(id, key -> {
             TopicData data = new TopicDataImpl(topicName, id, ETopicMode.READ);
-            Subscriber<T> subscriber = new SubscriberImpl<>(participant, data, createTopic(topicName));
-            subscriber.changeHandler(eventHandler);
-            subscribers.put(id, subscriber);
-            return subscriber;
-        }
+            return new SubscriberImpl<>(participant, data, getOrCreateTopic(topicName));
+        });
+        subscriber.changeHandler(eventHandler);
+        return subscriber;
     }
 
     @Override
@@ -95,9 +90,18 @@ public class PubSubWrapperImpl implements PubSubWrapper {
 
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void closeTopic(String id) {
-
+        SubscriberImpl subscriber = subscribers.remove(id);
+        PublisherImpl publisher = publishers.remove(id);
+        if (subscriber != null) {
+            participant.delete_subscriber(subscriber.getSubscriber());
+        }
+        if (publisher != null) {
+            participant.delete_publisher(publisher.getPublisher());
+        }
+        participant.delete_topic(getOrCreateTopic(id));
     }
 
     @Override
