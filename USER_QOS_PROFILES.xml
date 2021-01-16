@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+Description
+An RTI Connext QoS Profile that provides high throughput
+for streaming reliable data.
+
+This profile depends primarily on:
+
+Data writer:
+  - batch:    combining multiple samples into a single network packet to
+              increase throughput
+  - protocol: send heartbeats to readers more frequently to cache levels low
+
+Data reader:
+  - protocol: respond more aggressively to heartbeats with positive or
+              negative acknowledgements to speed up repairs of lost packets
+
+Domain participant:
+  - Increased transport buffer sizes to efficiently send and receive many
+    large packets
+
+-->
+
+<!-- ================================================================= -->
+<!-- Throughput QoS Profile                                            -->
+<!-- ================================================================= -->
+
+<!--
+Your XML editor may be able to provide validation and auto-completion services
+as you type. To enable these services, replace the opening tag of this
+document with the following, and update the absolute path as appropriate for
+your installation:
+  
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/5.3.1/rti_dds_qos_profiles.xsd">
+-->
+<dds>
+    <qos_library name="DefaultLibrary">
+        <!--
+        The HighThroughput profile is an extension of the Reliable profile.
+        RTI Connext provides APIs for loading multiple QoS
+        profile files at once, and referring from one to the other, but for
+        the sake of simplicity, we duplicate the Reliable profile here. For
+        more information about how it works, see the file reliable.xml.
+        -->
+        <qos_profile name="Reliable">
+        </qos_profile>
+    </qos_library>
+</dds>

@@ -10,7 +10,7 @@ import lombok.Getter;
 public class TopicDataImpl implements TopicData {
 
     private String topicName;
-    private int Id;
+    private String Id;
     private ETopicMode topicMode;
 
 }
