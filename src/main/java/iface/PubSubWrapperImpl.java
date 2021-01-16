@@ -3,9 +3,12 @@ package iface;
 import com.google.common.collect.ImmutableMap;
 import com.rti.dds.domain.DomainParticipant;
 import com.rti.dds.domain.DomainParticipantFactory;
+import com.rti.dds.infrastructure.Duration_t;
 import com.rti.dds.infrastructure.StatusKind;
+import com.rti.dds.topic.Topic;
 import iface.objects.Plot;
 import iface.objects.PlotTypeSupport;
+import iface.objects.Utils;
 import iface.topics.*;
 import iface.topicsImpl.PublisherImpl;
 import iface.topicsImpl.SubscriberImpl;
@@ -44,10 +47,29 @@ public class PubSubWrapperImpl implements PubSubWrapper {
             return (Publisher<T>) publishers.get(id);
         } else {
             TopicData data = new TopicDataImpl(topicName, id, ETopicMode.WRITE);
-            Publisher<T> publisher = new PublisherImpl<T>(participant, data);
+            Publisher<T> publisher = new PublisherImpl<>(participant, data, createTopic(topicName));
             publishers.put(id, publisher);
             return publisher;
         }
+    }
+
+    /**
+     * creates a topic
+     *
+     * @return rti topic instance
+     */
+    private Topic createTopic(String topicName) {
+        String typeName = Utils.getTypeName(topicName);
+        Topic topic = participant.find_topic(topicName, Duration_t.DURATION_AUTO);
+        if (topic == null) {
+            topic = participant.create_topic(
+                    topicName,
+                    typeName,
+                    DomainParticipant.TOPIC_QOS_DEFAULT,
+                    null,   // listener
+                    StatusKind.STATUS_MASK_NONE);
+        }
+        return topic;
     }
 
     @Override
@@ -56,7 +78,7 @@ public class PubSubWrapperImpl implements PubSubWrapper {
             return (Subscriber<T>) subscribers.get(id);
         } else {
             TopicData data = new TopicDataImpl(topicName, id, ETopicMode.READ);
-            Subscriber<T> subscriber = new SubscriberImpl<>(participant, data);
+            Subscriber<T> subscriber = new SubscriberImpl<>(participant, data, createTopic(topicName));
             subscriber.changeHandler(eventHandler);
             subscribers.put(id, subscriber);
             return subscriber;
@@ -100,9 +122,8 @@ public class PubSubWrapperImpl implements PubSubWrapper {
 
     public static void main(String[] args) throws InterruptedException {
         PubSubWrapperImpl impl = new PubSubWrapperImpl();
-        Publisher<Plot> publisher = impl.getOrCreateWriter("tomer", "1");
-        impl.getOrCreateReader("tomer", "1", p -> {
-        });
+        Publisher<Plot> publisher = impl.getOrCreateWriter("tomer", "Plot");
+        impl.getOrCreateReader("tomer", "Plot", System.out::println);
         Plot p = new Plot();
         p.azimuth = 2;
         Thread.sleep(1000);
