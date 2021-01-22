@@ -94,9 +94,7 @@ public class DiscovererImpl implements Discoverer {
             SubscriptionBuiltinTopicDataDataReader builtin_reader =
                     (SubscriptionBuiltinTopicDataDataReader) reader;
 
-
             try {
-
                 // We only process newly seen subscribers
                 builtin_reader.take(
                         _dataSeq, _infoSeq,
@@ -124,6 +122,8 @@ public class DiscovererImpl implements Discoverer {
                             participant.ignore_subscription(info.instance_handle);
                             continue;
                         }
+
+                        String id = new String(subscriptionBuiltinTopicData.user_data.value.toArrayByte(null));
 
                         TopicDataImpl topicData = new TopicDataImpl(topicName, id, ETopicMode.READ);
                         synchronized (lock) {
@@ -179,6 +179,9 @@ public class DiscovererImpl implements Discoverer {
                             participant.ignore_publication(info.instance_handle);
                             continue;
                         }
+
+                        String id = new String(publicationBuiltinTopicData.user_data.value.toArrayByte(null));
+
                         TopicDataImpl topicData = new TopicDataImpl(topicName, id, ETopicMode.WRITE);
                         synchronized (lock) {
                             discoveredTopics.add(topicData);

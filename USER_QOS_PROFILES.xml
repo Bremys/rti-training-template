@@ -44,7 +44,8 @@ your installation:
         the sake of simplicity, we duplicate the Reliable profile here. For
         more information about how it works, see the file reliable.xml.
         -->
-        <qos_profile name="Reliable">
+        <qos_profile name="default" is_default_qos="true">
+
         </qos_profile>
     </qos_library>
 </dds>

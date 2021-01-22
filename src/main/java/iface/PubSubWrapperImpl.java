@@ -6,9 +6,7 @@ import com.rti.dds.domain.DomainParticipantFactory;
 import com.rti.dds.infrastructure.Duration_t;
 import com.rti.dds.infrastructure.StatusKind;
 import com.rti.dds.topic.Topic;
-import iface.objects.Plot;
-import iface.objects.PlotTypeSupport;
-import iface.objects.Utils;
+import iface.objects.*;
 import iface.topics.*;
 import iface.topicsImpl.DiscovererImpl;
 import iface.topicsImpl.PublisherImpl;
@@ -43,9 +41,18 @@ public class PubSubWrapperImpl implements PubSubWrapper {
         subscribers = new HashMap<>();
         discoverers = new HashMap<>();
 
-        //register plot type
+        //register types
         PlotTypeSupport.register_type(participant,
                 PlotTypeSupport.get_type_name());
+
+        MessageTypeSupport.register_type(participant,
+                MessageTypeSupport.get_type_name());
+
+        AmitayTypeSupport.register_type(participant,
+                AmitayTypeSupport.get_type_name());
+
+        CoronaTypeSupport.register_type(participant,
+                CoronaTypeSupport.get_type_name());
 
         participant.enable();
     }
@@ -149,7 +156,9 @@ public class PubSubWrapperImpl implements PubSubWrapper {
     @Override
     public void close() throws Exception {
         this.participant.delete_contained_entities();
-        discoverers.forEach((key, value) -> closeDiscoverer(key));
+        for (Discoverer discoverer : discoverers.values()) {
+            discoverer.close();
+        }
         discoverers = null;
         subscribers = null;
         publishers = null;

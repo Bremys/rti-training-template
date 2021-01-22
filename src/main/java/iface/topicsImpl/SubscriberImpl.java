@@ -1,6 +1,7 @@
 package iface.topicsImpl;
 
 import com.rti.dds.domain.DomainParticipant;
+import com.rti.dds.domain.DomainParticipantFactory;
 import com.rti.dds.infrastructure.InstanceHandle_t;
 import com.rti.dds.infrastructure.RETCODE_NO_DATA;
 import com.rti.dds.infrastructure.ResourceLimitsQosPolicy;
@@ -13,6 +14,8 @@ import iface.topics.Subscriber;
 import iface.topics.TopicData;
 import lombok.Getter;
 import lombok.NonNull;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.function.Consumer;
@@ -21,6 +24,7 @@ import java.util.function.Consumer;
 @Getter
 public class SubscriberImpl<T extends Serializable> implements Subscriber<T> {
 
+    private static final Logger logger = LogManager.getLogger(SubscriberImpl.class);
     @NonNull
     private TopicData topicData;
     private Consumer<T> handler;
@@ -33,16 +37,23 @@ public class SubscriberImpl<T extends Serializable> implements Subscriber<T> {
                 DomainParticipant.SUBSCRIBER_QOS_DEFAULT,
                 null,
                 StatusKind.STATUS_MASK_NONE);
+
+        DataReaderQos qos = new DataReaderQos();
+        DomainParticipantFactory.TheParticipantFactory.get_datareader_qos_from_profile(qos, "DefaultLibrary", "default");
+        qos.user_data.value.addAllByte(topicData.getId().getBytes());
+
         this.dataReader =
                 subscriber.create_datareader(
                         topic,
-                        com.rti.dds.subscription.Subscriber.DATAREADER_QOS_DEFAULT,
+                        qos,
                         new MyDataReader(),
                         StatusKind.STATUS_MASK_ALL);
         if (this.dataReader == null) {
-            System.err.println("! Unable to create DDS Data Reader");
+            logger.error("Unable to create DDS Data Reader!");
             throw new RuntimeException("HelloSubscriber creation failed");
         }
+        topic.enable();
+        subscriber.enable();
     }
 
     @Override
@@ -52,7 +63,7 @@ public class SubscriberImpl<T extends Serializable> implements Subscriber<T> {
 
     @Override
     public void close() throws Exception {
-
+        this.subscriber.delete_contained_entities();
     }
 
     private class MyDataReader implements DataReaderListener {
