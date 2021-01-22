@@ -17,6 +17,7 @@ import lombok.NonNull;
 import java.io.Serializable;
 import java.util.function.Consumer;
 
+@SuppressWarnings("FieldMayBeFinal")
 @Getter
 public class SubscriberImpl<T extends Serializable> implements Subscriber<T> {
 
@@ -28,17 +29,17 @@ public class SubscriberImpl<T extends Serializable> implements Subscriber<T> {
 
     public SubscriberImpl(DomainParticipant participant, TopicData topicData, Topic topic) {
         this.topicData = topicData;
-        subscriber = participant.create_subscriber(
+        this.subscriber = participant.create_subscriber(
                 DomainParticipant.SUBSCRIBER_QOS_DEFAULT,
                 null,
                 StatusKind.STATUS_MASK_NONE);
-        dataReader =
+        this.dataReader =
                 subscriber.create_datareader(
                         topic,
                         com.rti.dds.subscription.Subscriber.DATAREADER_QOS_DEFAULT,
                         new MyDataReader(),
                         StatusKind.STATUS_MASK_ALL);
-        if (dataReader == null) {
+        if (this.dataReader == null) {
             System.err.println("! Unable to create DDS Data Reader");
             throw new RuntimeException("HelloSubscriber creation failed");
         }
@@ -93,8 +94,7 @@ public class SubscriberImpl<T extends Serializable> implements Subscriber<T> {
                 );
                 _dataSeq.forEach(handler);
 
-            } catch (RETCODE_NO_DATA noData) {
-                // No data to process
+            } catch (RETCODE_NO_DATA ignore) {
             } finally {
                 dataReader.return_loan_untyped(_dataSeq, _infoSeq);
             }

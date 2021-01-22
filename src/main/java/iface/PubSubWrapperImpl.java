@@ -10,9 +10,12 @@ import iface.objects.Plot;
 import iface.objects.PlotTypeSupport;
 import iface.objects.Utils;
 import iface.topics.*;
+import iface.topicsImpl.DiscovererImpl;
 import iface.topicsImpl.PublisherImpl;
 import iface.topicsImpl.SubscriberImpl;
 import iface.topicsImpl.TopicDataImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -20,30 +23,36 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "FieldMayBeFinal"})
 public class PubSubWrapperImpl implements PubSubWrapper {
 
+    private static final Logger logger = LogManager.getLogger(PubSubWrapperImpl.class);
     private DomainParticipant participant;
     private Map<String, PublisherImpl<? extends Serializable>> publishers;
     private Map<String, SubscriberImpl<? extends Serializable>> subscribers;
+    private Map<String, DiscovererImpl> discoverers;
 
     public PubSubWrapperImpl() {
-        participant = DomainParticipantFactory.get_instance().create_participant(
-                1,
+        participant = DomainParticipantFactory.TheParticipantFactory.create_participant(
+                Constants.DOMAIN_ID,
                 DomainParticipantFactory.PARTICIPANT_QOS_DEFAULT,
                 null,
                 StatusKind.STATUS_MASK_NONE);
 
         publishers = new HashMap<>();
         subscribers = new HashMap<>();
+        discoverers = new HashMap<>();
 
         //register plot type
         PlotTypeSupport.register_type(participant,
                 PlotTypeSupport.get_type_name());
+
+        participant.enable();
     }
 
     @Override
     public <T extends Serializable> Publisher<T> getOrCreateWriter(String id, String topicName) {
+        logger.info("creating publisher: {} in domain {}", topicName, id);
         return (Publisher<T>) publishers.computeIfAbsent(id, key -> {
             TopicData data = new TopicDataImpl(topicName, id, ETopicMode.WRITE);
             return new PublisherImpl<T>(participant, data, getOrCreateTopic(topicName));
@@ -72,6 +81,7 @@ public class PubSubWrapperImpl implements PubSubWrapper {
 
     @Override
     public <T extends Serializable> Subscriber<T> getOrCreateReader(String id, String topicName, Consumer<T> eventHandler) {
+        logger.info("creating subscriber: {} in domain {}", topicName, id);
         SubscriberImpl<T> subscriber = (SubscriberImpl<T>) subscribers.computeIfAbsent(id, key -> {
             TopicData data = new TopicDataImpl(topicName, id, ETopicMode.READ);
             return new SubscriberImpl<>(participant, data, getOrCreateTopic(topicName));
@@ -82,26 +92,43 @@ public class PubSubWrapperImpl implements PubSubWrapper {
 
     @Override
     public Discoverer openDiscoverer(String id, Collection<String> allowedTopics, Collection<String> deniedTopics, Consumer<TopicData> eventHandler) {
-        return null;
+        logger.info("creating discoverer in domain {}", id);
+        DiscovererImpl discoverer = discoverers.computeIfAbsent(id, key -> new DiscovererImpl(id, allowedTopics, deniedTopics, eventHandler));
+        discoverer.changeHandler(eventHandler);
+        return discoverer;
     }
 
     @Override
     public void closeDiscoverer(String id) {
-
+        try {
+            discoverers.remove(id).close();
+        } catch (Exception e) {
+            logger.error("Could not close discoverer", e);
+        }
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void closeTopic(String id) {
-        SubscriberImpl subscriber = subscribers.remove(id);
-        PublisherImpl publisher = publishers.remove(id);
-        if (subscriber != null) {
-            participant.delete_subscriber(subscriber.getSubscriber());
-        }
-        if (publisher != null) {
-            participant.delete_publisher(publisher.getPublisher());
-        }
-        participant.delete_topic(getOrCreateTopic(id));
+    public void closeTopic(String topicName) {
+        logger.info("closing topic {}", topicName);
+
+        subscribers
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().getTopicData().getTopicName().equals(topicName))
+                .forEach(entry -> {
+                    participant.delete_subscriber(subscribers.remove(entry.getKey()).getSubscriber());
+                });
+
+        publishers
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().getTopicData().getTopicName().equals(topicName))
+                .forEach(entry -> {
+                    participant.delete_publisher(publishers.remove(entry.getKey()).getPublisher());
+                });
+
+        participant.delete_topic(getOrCreateTopic(topicName));
     }
 
     @Override
@@ -116,24 +143,28 @@ public class PubSubWrapperImpl implements PubSubWrapper {
 
     @Override
     public ImmutableMap<String, Discoverer> getRunningDiscoverers() {
-        return null;
+        return ImmutableMap.copyOf(discoverers);
     }
 
     @Override
     public void close() throws Exception {
-
+        this.participant.delete_contained_entities();
+        discoverers.forEach((key, value) -> closeDiscoverer(key));
+        discoverers = null;
+        subscribers = null;
+        publishers = null;
     }
 
     public static void main(String[] args) throws InterruptedException {
         PubSubWrapperImpl impl = new PubSubWrapperImpl();
+        Discoverer discoverer = impl.openDiscoverer("discoverer", null, null, System.out::println);
         Publisher<Plot> publisher = impl.getOrCreateWriter("tomer", "Plot");
         impl.getOrCreateReader("tomer", "Plot", System.out::println);
         Plot p = new Plot();
         p.azimuth = 2;
-        Thread.sleep(1000);
-        publisher.send(p);
         while (true) {
             Thread.sleep(1000);
+            publisher.send(p);
         }
     }
 }

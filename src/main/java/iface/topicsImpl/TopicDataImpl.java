@@ -10,7 +10,11 @@ import lombok.Getter;
 public class TopicDataImpl implements TopicData {
 
     private String topicName;
-    private String Id;
+    private String id;
     private ETopicMode topicMode;
 
+
+    public String toString() {
+        return String.format("Topic name: %s, DomainId: %s, Topic mode: %s", topicName, id, topicMode);
+    }
 }

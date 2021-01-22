@@ -21,17 +21,17 @@ public class PublisherImpl<T extends Serializable> implements Publisher<T> {
     private DataWriter dataWriter;
 
     public PublisherImpl(DomainParticipant participant, TopicData topicData, Topic topic) {
-        publisher = participant.create_publisher(
+        this.publisher = participant.create_publisher(
                 DomainParticipant.PUBLISHER_QOS_DEFAULT,
                 null,           // listener
                 StatusKind.STATUS_MASK_NONE);
         this.topicData = topicData;
-        dataWriter =
+        this.dataWriter =
                 publisher.create_datawriter(topic,
                         com.rti.dds.publication.Publisher.DATAWRITER_QOS_DEFAULT,
                         null,           // listener
                         StatusKind.STATUS_MASK_NONE);
-        if (dataWriter == null) {
+        if (this.dataWriter == null) {
             System.err.println("Unable to create DDS data writer\n");
         }
     }
