@@ -103,7 +103,14 @@ public class SubscriberImpl<T extends Serializable> implements Subscriber<T> {
                         ViewStateKind.ANY_VIEW_STATE,
                         InstanceStateKind.ANY_INSTANCE_STATE
                 );
-                _dataSeq.forEach(handler);
+
+                for (int i = 0; i < _dataSeq.size(); ++i) {
+                    SampleInfo info = _infoSeq.get(i);
+
+                    if (info.valid_data) {
+                        handler.accept((T) _dataSeq.get(i));
+                    }
+                }
 
             } catch (RETCODE_NO_DATA ignore) {
             } finally {

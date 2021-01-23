@@ -1,6 +1,7 @@
-import example.Message;
+
 import static org.mockito.Mockito.*;
 import iface.PubSubWrapper;
+import iface.objects.Message;
 import iface.topics.Discoverer;
 import iface.topics.Subscriber;
 import iface.topics.Publisher;
