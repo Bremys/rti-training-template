@@ -3,6 +3,7 @@ package iface;
 import com.google.common.collect.ImmutableMap;
 import com.rti.dds.domain.DomainParticipant;
 import com.rti.dds.domain.DomainParticipantFactory;
+import com.rti.dds.infrastructure.Copyable;
 import com.rti.dds.infrastructure.Duration_t;
 import com.rti.dds.infrastructure.StatusKind;
 import com.rti.dds.topic.Topic;
@@ -58,7 +59,7 @@ public class PubSubWrapperImpl implements PubSubWrapper {
     }
 
     @Override
-    public <T extends Serializable> Publisher<T> getOrCreateWriter(String id, String topicName) {
+    public <T extends Serializable & Copyable> Publisher<T> getOrCreateWriter(String id, String topicName) {
         logger.info("creating publisher: {} in domain {}", topicName, id);
         return (Publisher<T>) publishers.computeIfAbsent(id, key -> {
             TopicData data = new TopicDataImpl(topicName, id, ETopicMode.WRITE);
@@ -87,7 +88,7 @@ public class PubSubWrapperImpl implements PubSubWrapper {
 
 
     @Override
-    public <T extends Serializable> Subscriber<T> getOrCreateReader(String id, String topicName, Consumer<T> eventHandler) {
+    public <T extends Serializable & Copyable> Subscriber<T> getOrCreateReader(String id, String topicName, Consumer<T> eventHandler) {
         logger.info("creating subscriber: {} in domain {}", topicName, id);
         SubscriberImpl<T> subscriber = (SubscriberImpl<T>) subscribers.computeIfAbsent(id, key -> {
             TopicData data = new TopicDataImpl(topicName, id, ETopicMode.READ);
@@ -162,18 +163,6 @@ public class PubSubWrapperImpl implements PubSubWrapper {
         discoverers = null;
         subscribers = null;
         publishers = null;
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        PubSubWrapperImpl impl = new PubSubWrapperImpl();
-        Discoverer discoverer = impl.openDiscoverer("discoverer", null, null, System.out::println);
-        Publisher<Plot> publisher = impl.getOrCreateWriter("tomer", "Plot");
-        impl.getOrCreateReader("tomer", "Plot", System.out::println);
-        Plot p = new Plot();
-        p.azimuth = 2;
-        while (true) {
-            Thread.sleep(1000);
-            publisher.send(p);
-        }
+        DomainParticipantFactory.TheParticipantFactory.delete_participant(this.participant);
     }
 }

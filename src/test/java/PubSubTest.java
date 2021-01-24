@@ -110,7 +110,6 @@ public class PubSubTest {
             publishers.get(i % publishers.size()).send(messagesToSend.get(i));
         }
 
-//        Thread.sleep(3000);
         Awaitility.await().untilAsserted(() -> assertThat(received).containsAll(messagesToSend));
     }
 

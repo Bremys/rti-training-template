@@ -1,18 +1,16 @@
 package iface;
 
 import com.google.common.collect.ImmutableMap;
-import iface.topics.Discoverer;
-import iface.topics.Publisher;
-import iface.topics.Subscriber;
-import iface.topics.TopicData;
+import com.rti.dds.infrastructure.Copyable;
+import iface.topics.*;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.function.Consumer;
 
 public interface PubSubWrapper extends AutoCloseable {
-    <T extends Serializable> Publisher<T> getOrCreateWriter(String id, String topicName);
-    <T extends Serializable> Subscriber<T> getOrCreateReader(String id, String topicName, Consumer<T> eventHandler);
+    <T extends Copyable & Serializable> Publisher<T> getOrCreateWriter(String id, String topicName);
+    <T extends Copyable & Serializable> Subscriber<T> getOrCreateReader(String id, String topicName, Consumer<T> eventHandler);
     Discoverer openDiscoverer(String id, Collection<String> allowedTopics, Collection<String> deniedTopics, Consumer<TopicData> eventHandler);
     default Discoverer openDiscoverer(String id, Consumer<TopicData> eventHandler) {
         return openDiscoverer(id, null, null, eventHandler);

@@ -2,6 +2,7 @@ package iface.topicsImpl;
 
 import com.rti.dds.domain.DomainParticipant;
 import com.rti.dds.domain.DomainParticipantFactory;
+import com.rti.dds.infrastructure.Copyable;
 import com.rti.dds.infrastructure.InstanceHandle_t;
 import com.rti.dds.infrastructure.StatusKind;
 import com.rti.dds.publication.DataWriter;
@@ -17,7 +18,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.Serializable;
 
 @Getter
-public class PublisherImpl<T extends Serializable> implements Publisher<T> {
+public class PublisherImpl<T extends Copyable & Serializable> implements Publisher<T> {
 
     private static final Logger logger = LogManager.getLogger(PublisherImpl.class);
     @NonNull

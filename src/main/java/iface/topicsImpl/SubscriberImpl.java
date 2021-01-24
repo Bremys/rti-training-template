@@ -2,10 +2,7 @@ package iface.topicsImpl;
 
 import com.rti.dds.domain.DomainParticipant;
 import com.rti.dds.domain.DomainParticipantFactory;
-import com.rti.dds.infrastructure.InstanceHandle_t;
-import com.rti.dds.infrastructure.RETCODE_NO_DATA;
-import com.rti.dds.infrastructure.ResourceLimitsQosPolicy;
-import com.rti.dds.infrastructure.StatusKind;
+import com.rti.dds.infrastructure.*;
 import com.rti.dds.subscription.*;
 import com.rti.dds.topic.Topic;
 import com.rti.dds.util.LoanableSequence;
@@ -22,7 +19,7 @@ import java.util.function.Consumer;
 
 @SuppressWarnings("FieldMayBeFinal")
 @Getter
-public class SubscriberImpl<T extends Serializable> implements Subscriber<T> {
+public class SubscriberImpl<T extends Copyable & Serializable> implements Subscriber<T> {
 
     private static final Logger logger = LogManager.getLogger(SubscriberImpl.class);
     @NonNull
@@ -108,7 +105,10 @@ public class SubscriberImpl<T extends Serializable> implements Subscriber<T> {
                     SampleInfo info = _infoSeq.get(i);
 
                     if (info.valid_data) {
-                        handler.accept((T) _dataSeq.get(i));
+                        T newObject = Utils.newInstance(topicData.getTopicName());
+                        T data = (T) _dataSeq.get(i);
+                        newObject.copy_from(data);
+                        handler.accept(newObject);
                     }
                 }
 
